@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>:3</title>
+    <style type="text/css">
+        body {
+            background-color: #2B2A33;
+            color: white;
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            position: relative;
+            min-height: 100vh;
+        }
+        form {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        input[type="file"] {
+            margin-right: 10px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #progressContainer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: grey;
+            height: 20px;
+            display: none;
+        }
+        #progressBar {
+            width: 0;
+            height: 100%;
+            background-color: #4CAF50;
+            text-align: center;
+            line-height: 20px;
+            color: white;
+        }
+        #result {
+            margin-top: 20px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        ul li {
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+        }
+        .delete-btn {
+            margin-left: 10px;
+            color: red;
+            cursor: pointer;
+        }
+        .copy-link-icon {
+            margin-left: 10px;
+            cursor: pointer;
+            color: #4CAF50;
+            font-size: 18px;
+        }
+        .copy-link-icon:hover {
+            color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>File Upload</h1>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" id="fileInput" name="file">
+        <button type="submit">Upload</button>
+    </form>
+
+    <div id="result"></div>
+
+    <h1 id="uploadedFilesHeading" style="display: none;">Uploaded Files</h1>
+    <ul id="fileList"></ul>
+
+    <div id="progressContainer">
+        <div id="progressBar">0%</div>
+    </div>
+
+<script>
+    function updateProgressBar(percent) {
+        const progressBar = document.getElementById('progressBar');
+        progressBar.style.width = percent + '%';
+        progressBar.textContent = percent + '%';
+    }
+
+    async function fetchFileList() {
+        try {
+            const response = await fetch('/files');
+            const fileListHtml = await response.text();
+            const fileListElement = document.getElementById('fileList');
+            const uploadedFilesHeading = document.getElementById('uploadedFilesHeading');
+
+            fileListElement.innerHTML = fileListHtml;
+
+            if (fileListHtml.trim() === "") {
+                uploadedFilesHeading.style.display = 'none';
+            } else {
+                uploadedFilesHeading.style.display = 'block';
+            }
+
+            addDeleteHandlers();
+            addCopyLinkHandlers();
+        } catch (error) {
+            console.error('Error fetching file list:', error);
+        }
+    }
+
+    function addCopyLinkHandlers() {
+        const copyLinkIcons = document.querySelectorAll('.copy-link-icon');
+        copyLinkIcons.forEach(icon => {
+            icon.addEventListener('click', () => {
+                const link = icon.getAttribute('data-link');
+                navigator.clipboard.writeText(window.location.origin + link).then(() => {
+                    alert('Successfully copied!');
+                }).catch(err => {
+                    console.error('Error copying link:', err);
+                });
+            });
+        });
+    }
+
+    function addDeleteHandlers() {
+        const deleteButtons = document.querySelectorAll('.delete-btn');
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', async (e) => {
+                const filename = e.target.dataset.filename;
+                try {
+                    const response = await fetch(`/delete/${filename}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (response.ok) {
+                        alert('File deleted successfully');
+                        fetchFileList();
+                    } else {
+                        alert('Error deleting file');
+                    }
+                } catch (error) {
+                    console.error('Error deleting file:', error);
+                }
+            });
+        });
+    }
+
+    document.getElementById('uploadForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput.files.length === 0) {
+            alert("Please select a file.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/upload', true);
+
+        xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+                const percentComplete = (event.loaded / event.total) * 100;
+                updateProgressBar(percentComplete.toFixed(0));
+            }
+        };
+
+        xhr.onloadstart = () => {
+            document.getElementById('progressContainer').style.display = 'block';
+        };
+
+        xhr.onloadend = () => {
+            document.getElementById('progressContainer').style.display = 'none';
+            updateProgressBar(0);
+        };
+
+        xhr.onload = () => {
+            if (xhr.status === 200) {
+                document.getElementById('result').textContent = 'Upload successful!';
+                fetchFileList();
+            } else {
+                document.getElementById('result').textContent = 'Error uploading file.';
+            }
+        };
+
+        xhr.send(formData);
+    });
+
+    window.onload = fetchFileList;
+</script>
+
+</body>
+</html>
