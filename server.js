@@ -49,47 +49,25 @@ app.get('/download/:filename', (req, res) => {
     }
 });
 
-// List uploaded files
+// Returns file size
 app.get('/files', (req, res) => {
     fs.readdir(uploadPath, (err, files) => {
         if (err) {
             return res.status(500).send('Unable to scan files');
         }
-        const fileListHtml = files.map(file => {
-            const fileUrl = `/uploads/${encodeURIComponent(file)}`;
-            return `
-                <li>
-                    <a href="${fileUrl}" download>${file}</a>
-                    <span class="copy-link-icon" data-link="${fileUrl}">📋</span>
-                    <span class="delete-btn" data-filename="${file}">❌</span>
-                </li>
-            `;
-        }).join('');
-        
-        res.send(fileListHtml);
+
+        const fileDetails = files.map(file => {
+            const filePath = path.join(uploadPath, file);
+            const stats = fs.statSync(filePath);
+            return {
+                name: file,
+                size: stats.size // file size in bytes
+            };
+        });
+
+        res.json(fileDetails);
     });
 });
-
-async function fetchFileList() {
-    try {
-        const response = await fetch('/files');
-        const fileListHtml = await response.text();
-        const fileListElement = document.getElementById('fileList');
-        const uploadedFilesHeading = document.getElementById('uploadedFilesHeading');
-
-        fileListElement.innerHTML = fileListHtml;
-
-        if (fileListHtml.trim() === "") {
-            uploadedFilesHeading.style.display = 'none';
-        } else {
-            uploadedFilesHeading.style.display = 'block';
-        }
-
-        addDeleteHandlers();
-    } catch (error) {
-        console.error('Error fetching file list:', error);
-    }
-}
 
 // Handle file deletion
 app.delete('/delete/:filename', (req, res) => {
@@ -108,19 +86,6 @@ app.delete('/delete/:filename', (req, res) => {
     }
 });
 
-function addCopyLinkHandlers() {
-    const copyLinkIcons = document.querySelectorAll('.copy-link-icon');
-    copyLinkIcons.forEach(icon => {
-        icon.addEventListener('click', () => {
-            const link = icon.getAttribute('data-link');
-            navigator.clipboard.writeText(window.location.origin + link).then(() => {
-                alert('Link copied to clipboard!');
-            }).catch(err => {
-                console.error('Error copying link:', err);
-            });
-        });
-    });
-}
 
 // Function to delete files older than 24 hours
 function deleteOldFiles() {
@@ -141,9 +106,9 @@ function deleteOldFiles() {
                 }
 
                 const fileAge = now - stats.mtimeMs;
-                const oneDay = 24 * 60 * 60 * 1000; // One day in milliseconds
+                const oneWeek = 7 * 24 * 60 * 60 * 1000; // One day in milliseconds
 
-                if (fileAge > oneDay) {
+                if (fileAge > oneWeek) {
                     fs.unlink(filePath, err => {
                         if (err) {
                             console.error(`Error deleting file ${file}:`, err);
@@ -156,6 +121,7 @@ function deleteOldFiles() {
         });
     });
 }
+
 
 // Check and delete old files every hour
 setInterval(deleteOldFiles, 60 * 60 * 1000);

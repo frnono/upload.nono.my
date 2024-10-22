@@ -92,26 +92,41 @@
     <ul id="fileList"></ul>
 
     <div id="progressContainer">
-        <div id="progressBar">0%</div>
-    </div>
-
+        <div id="progressBar" style="width: 0; height: 100%; background-color: #4CAF50; position: absolute;"></div>
+        <span id="progressText" style="position: absolute; width: 100%; text-align: center; line-height: 20px; color: white;">0%</span>
+    </div>   
+    
 <script>
     function updateProgressBar(percent) {
         const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
         progressBar.style.width = percent + '%';
-        progressBar.textContent = percent + '%';
+        progressText.textContent = percent + '%';
     }
 
     async function fetchFileList() {
         try {
             const response = await fetch('/files');
-            const fileListHtml = await response.text();
+            const files = await response.json(); // Receive JSON data
             const fileListElement = document.getElementById('fileList');
             const uploadedFilesHeading = document.getElementById('uploadedFilesHeading');
 
+            const fileListHtml = files.map(file => {
+                const fileUrl = `/uploads/${encodeURIComponent(file.name)}`;
+                const fileSize = (file.size / 1024 / 1024).toFixed(2); // Convert bytes to MB, rounded to two decimals
+                return `
+                    <li>
+                        <a href="${fileUrl}" download>${file.name}</a>&nbsp;
+                        <span>(${fileSize} MB)</span>
+                        <span class="copy-link-icon" data-link="${fileUrl}">📋</span>
+                        <span class="delete-btn" data-filename="${file.name}">❌</span>
+                    </li>
+                `;
+            }).join('');
+
             fileListElement.innerHTML = fileListHtml;
 
-            if (fileListHtml.trim() === "") {
+            if (files.length === 0) {
                 uploadedFilesHeading.style.display = 'none';
             } else {
                 uploadedFilesHeading.style.display = 'block';
@@ -162,46 +177,60 @@
     }
 
     document.getElementById('uploadForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const fileInput = document.getElementById('fileInput');
-        if (fileInput.files.length === 0) {
-            alert("Please select a file.");
-            return;
+    e.preventDefault();
+    
+    const fileInput = document.getElementById('fileInput');
+    if (fileInput.files.length === 0) {
+        alert("Please select a file.");
+        return;
+    }
+
+    const file = fileInput.files[0];
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/upload', true);
+
+    let uploadStartTime;
+
+    xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+            const percentComplete = ((event.loaded / event.total) * 100).toFixed(0);
+            updateProgressBar(percentComplete);
+
+            const timeElapsed = (Date.now() - uploadStartTime) / 1000; // Convert ms to seconds
+            const uploadSpeed = (event.loaded / timeElapsed) / (1024 * 1024); // Bytes to MB
+
+            const uploadedSize = (event.loaded / (1024 * 1024)).toFixed(2); // Convert bytes to MB
+            const totalSize = (event.total / (1024 * 1024)).toFixed(2); // Convert bytes to MB
+
+            // Display the upload status
+            document.getElementById('result').textContent = `${uploadedSize}/${totalSize} MB (${uploadSpeed.toFixed(2)} MB/s)`;
+
+            console.log(`Uploaded: ${uploadedSize} MB of ${totalSize} MB at ${uploadSpeed.toFixed(2)} MB/s`);
         }
+    };
 
-        const formData = new FormData();
-        formData.append('file', fileInput.files[0]);
+    xhr.onloadstart = () => {
+        uploadStartTime = Date.now();
+        document.getElementById('progressContainer').style.display = 'block';
+    };
 
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', '/upload', true);
+    xhr.onloadend = () => {
+        document.getElementById('progressContainer').style.display = 'none';
+        updateProgressBar(0);
+    };
 
-        xhr.upload.onprogress = (event) => {
-            if (event.lengthComputable) {
-                const percentComplete = (event.loaded / event.total) * 100;
-                updateProgressBar(percentComplete.toFixed(0));
-            }
-        };
+    xhr.onload = () => {
+        // Replace the status text with the completion message
+        const resultMessage = xhr.status === 200 ? 'Upload successful!' : 'Error uploading file.';
+        document.getElementById('result').textContent = resultMessage;
+        fetchFileList();
+    };
 
-        xhr.onloadstart = () => {
-            document.getElementById('progressContainer').style.display = 'block';
-        };
-
-        xhr.onloadend = () => {
-            document.getElementById('progressContainer').style.display = 'none';
-            updateProgressBar(0);
-        };
-
-        xhr.onload = () => {
-            if (xhr.status === 200) {
-                document.getElementById('result').textContent = 'Upload successful!';
-                fetchFileList();
-            } else {
-                document.getElementById('result').textContent = 'Error uploading file.';
-            }
-        };
-
-        xhr.send(formData);
-    });
+    xhr.send(formData);
+});
 
     window.onload = fetchFileList;
 </script>
