@@ -2,32 +2,59 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { v4: uuidv4 } = require('uuid');
 const app = express();
 const port = 3000;
 
 // Directory for uploads
 const uploadPath = path.join(__dirname, 'uploads');
+const mappingsFilePath = path.join(__dirname, 'file-mappings.json');
+
+// Functions for JSON manipulation
+function readFileMappings() {
+    if (!fs.existsSync(mappingsFilePath)) {
+        return {};
+    }
+    return JSON.parse(fs.readFileSync(mappingsFilePath));
+}
+
+function writeFileMappings(mappings) {
+    fs.writeFileSync(mappingsFilePath, JSON.stringify(mappings, null, 2));
+}
 
 // Serve static files
 app.use(express.static('public'));
 app.use('/uploads', express.static(uploadPath));
 
-// Set up multer for file upload
+// Set up multer for file upload with UUID filenames
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         if (!fs.existsSync(uploadPath)) {
-            fs.mkdirSync(uploadPath);
+            fs.mkdirSync(uploadPath, { recursive: true });
         }
         cb(null, uploadPath);
     },
     filename: (req, file, cb) => {
-        const originalName = file.originalname;
-        const modifiedName = originalName.replace(/\s+/g, '_'); // Replace spaces with underscores
-        cb(null, Date.now() + '-' + modifiedName);
+        const randomName = uuidv4();
+        saveFileMapping(randomName, file.originalname);
+        cb(null, randomName);
     }
 });
 
 const upload = multer({ storage: storage });
+
+// Saves file names for each uuid
+function saveFileMapping(randomName, originalName) {
+    let mappings = readFileMappings();
+    mappings[randomName] = originalName;
+    writeFileMappings(mappings);
+}
+
+// Lookup file name from uuid
+function lookupOriginalName(randomName) {
+    const mappings = readFileMappings();
+    return mappings[randomName];
+}
 
 // Handle file upload
 app.post('/upload', upload.single('file'), (req, res) => {
@@ -37,19 +64,20 @@ app.post('/upload', upload.single('file'), (req, res) => {
     res.status(200).json({ message: 'Upload successful', fileName: req.file.filename });
 });
 
-// Handle file download
-app.get('/download/:filename', (req, res) => {
-    const fileName = req.params.filename;
-    const filePath = path.join(uploadPath, fileName);
+// Handle file download with original name
+app.get('/download/:uuid', (req, res) => {
+    const randomName = req.params.uuid;
+    const filePath = path.join(uploadPath, randomName);
+    const originalName = lookupOriginalName(randomName);
 
-    if (fs.existsSync(filePath)) {
-        res.download(filePath, fileName);
+    if (fs.existsSync(filePath) && originalName) {
+        res.download(filePath, originalName);
     } else {
         res.status(404).send('File not found');
     }
 });
 
-// Returns file size
+// Return list of files with UUID and original names
 app.get('/files', (req, res) => {
     fs.readdir(uploadPath, (err, files) => {
         if (err) {
@@ -59,9 +87,11 @@ app.get('/files', (req, res) => {
         const fileDetails = files.map(file => {
             const filePath = path.join(uploadPath, file);
             const stats = fs.statSync(filePath);
+            const originalName = lookupOriginalName(file);
             return {
-                name: file,
-                size: stats.size // file size in bytes
+                name: originalName,
+                uuid: file,
+                size: stats.size
             };
         });
 
@@ -73,12 +103,15 @@ app.get('/files', (req, res) => {
 app.delete('/delete/:filename', (req, res) => {
     const fileName = req.params.filename;
     const filePath = path.join(uploadPath, fileName);
+    const mappings = readFileMappings();
 
     if (fs.existsSync(filePath)) {
         fs.unlink(filePath, err => {
             if (err) {
                 return res.status(500).send('Error deleting file');
             }
+            delete mappings[fileName]; // Remove entry from mappings
+            writeFileMappings(mappings); // Update mappings file
             res.send('File deleted successfully');
         });
     } else {
@@ -86,10 +119,10 @@ app.delete('/delete/:filename', (req, res) => {
     }
 });
 
-
-// Function to delete files older than a week
+// Delete function to clean up old files
 function deleteOldFiles() {
     const now = Date.now();
+    const oneWeek = 7 * 24 * 60 * 60 * 1000;
 
     fs.readdir(uploadPath, (err, files) => {
         if (err) {
@@ -106,8 +139,6 @@ function deleteOldFiles() {
                 }
 
                 const fileAge = now - stats.mtimeMs;
-                const oneWeek = 7 * 24 * 60 * 60 * 1000; // One day in milliseconds
-
                 if (fileAge > oneWeek) {
                     fs.unlink(filePath, err => {
                         if (err) {
@@ -122,10 +153,10 @@ function deleteOldFiles() {
     });
 }
 
-
-// Check and delete old files every hour
+// Schedule deletion of old files
 setInterval(deleteOldFiles, 60 * 60 * 1000);
 
+// Start the server
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
