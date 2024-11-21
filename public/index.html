@@ -1,24 +1,33 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>:3</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <h1>File Upload</h1>
-    <form id="uploadForm" enctype="multipart/form-data">
-        <input type="file" id="fileInput" name="file" multiple>
-        <button type="submit"><b>Upload</b></button>
+    
+    <form id="uploadForm">
+        <div class="drop-zone" id="dropZone">
+            <input type="file" id="fileInput" multiple hidden>
+            <div class="drop-zone-content">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <p>Drop files here or click to upload</p>
+            </div>
+        </div>
     </form>
 
-    <button id="clearHistory" class="clear-history" style="display: none;">Clear Upload History</button>
+    <button id="clearHistory" style="display: none;">Clear Upload History</button>
+
     <div id="uploadProgress"></div>
     <div id="result"></div>
 
     <h1 id="uploadedFilesHeading" style="display: none;">Uploaded Files</h1>
-    <button id="bulkDelete" class="bulk-delete" style="display: none;">Delete Selected</button>
+    <button id="bulkDelete" class="bulk-delete" style="display: none;">Delete</button>
     <ul id="fileList"></ul>
 
     <script src="script.js"></script>

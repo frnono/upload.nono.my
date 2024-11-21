@@ -1,6 +1,15 @@
 let uploadCount = 0;
 let completedUploads = 0;
 
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const bulkDeleteButton = document.getElementById('bulkDelete');
+const uploadForm = document.getElementById('uploadForm');
+const uploadProgress = document.getElementById('uploadProgress');
+const clearHistoryButton = document.getElementById('clearHistory');
+const fileListElement = document.getElementById('fileList');
+const uploadedFilesHeading = document.getElementById('uploadedFilesHeading');
+
 function formatSizeUnits(bytes) {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -34,23 +43,19 @@ function updateProgress(progressElement, loaded, total, startTime) {
     const progressText = progressElement.querySelector('.progress-text');
     const statsElement = progressElement.querySelector('.upload-stats');
 
-    progressBar.style.width = percentComplete + '%';
-    progressText.textContent = percentComplete + '%';
+    progressBar.style.width = `${percentComplete}%`;
+    progressText.textContent = `${percentComplete}%`;
 
     const timeElapsed = (Date.now() - startTime) / 1000;
     const uploadSpeed = (loaded / timeElapsed) / (1024 * 1024);
     const uploadedSize = formatSizeUnits(loaded);
     const totalSize = formatSizeUnits(total);
 
-    const [uploadedNum, uploadedUnit] = uploadedSize.split(' ');
-    const [totalNum, totalUnit] = totalSize.split(' ');
-
-    statsElement.textContent = `${parseFloat(uploadedNum).toFixed(2)} ${uploadedUnit} / ${parseFloat(totalNum).toFixed(2)} ${totalUnit} at ${uploadSpeed.toFixed(2)} MB/s`;
+    statsElement.textContent = `${uploadedSize} / ${totalSize} at ${uploadSpeed.toFixed(2)} MB/s`;
 }
 
 function toggleBulkDeleteButton() {
     const checkedFiles = document.querySelectorAll('.file-checkbox:checked');
-    const bulkDeleteButton = document.getElementById('bulkDelete');
     bulkDeleteButton.style.display = checkedFiles.length > 0 ? 'block' : 'none';
 }
 
@@ -67,10 +72,7 @@ async function fetchFileList() {
         
         files.sort((a, b) => b.modifiedTime - a.modifiedTime);
 
-        const fileListElement = document.getElementById('fileList');
-        const uploadedFilesHeading = document.getElementById('uploadedFilesHeading');
         const existingFiles = new Map();
-
         const fileListHtml = files.map(file => {
             let newName = file.name;
             let nameCounter = existingFiles.get(newName) || 0;
@@ -84,8 +86,9 @@ async function fetchFileList() {
             }
 
             existingFiles.set(newName, nameCounter);
-
-            const fileUrl = `/download/${file.uuid}`;
+            
+            const extension = newName.split('.').pop();
+            const fileUrl = `/download/${file.uuid}.${extension}`;
             const fileSize = formatSizeUnits(file.size);
             return `
                 <li>
@@ -109,68 +112,95 @@ async function fetchFileList() {
         console.error('Error fetching file list:', error);
     }
 }
+
 function addCopyLinkHandlers() {
     document.querySelectorAll('.copy-link-icon').forEach(icon => {
-        icon.addEventListener('click', () => {
+        icon.addEventListener('click', async () => {
             const link = icon.getAttribute('data-link');
-            navigator.clipboard.writeText(window.location.origin + link)
-                .then(() => alert('Successfully copied!'))
-                .catch(err => console.error('Error copying link:', err));
-        });
-    });
-}
-
-function addDeleteHandlers() {
-    document.querySelectorAll('.delete-btn').forEach(button => {
-        button.addEventListener('click', async (e) => {
-            const filename = e.target.dataset.filename;
             try {
-                const response = await fetch(`/delete/${filename}`, {
-                    method: 'DELETE'
-                });
-
-                if (response.ok) {
-                    await fetchFileList();
-                    alert('File deleted successfully');
-                } else {
-                    alert('Error deleting file');
-                }
-            } catch (error) {
-                console.error('Error deleting file:', error);
-                alert('Error deleting file');
+                await navigator.clipboard.writeText(window.location.origin + link);
+                alert('Link copied to clipboard!');
+            } catch (err) {
+                console.error('Error copying link:', err);
+                alert('Failed to copy link');
             }
         });
     });
 }
 
-document.getElementById('bulkDelete').addEventListener('click', async () => {
+bulkDeleteButton.addEventListener('click', async () => {
     const checkedFiles = document.querySelectorAll('.file-checkbox:checked');
     const filenames = Array.from(checkedFiles).map(checkbox => checkbox.dataset.filename);
 
-    const promises = filenames.map(async (filename) => {
-        try {
-            const response = await fetch(`/delete/${filename}`, { method: 'DELETE' });
-            if (!response.ok) throw new Error('Delete failed');
-        } catch (error) {
-            console.error(`Error deleting file ${filename}:`, error);
-        }
-    });
+    try {
+        const promises = filenames.map(filename =>
+            fetch(`/delete/${filename}`, { method: 'DELETE' }).catch(err => {
+                console.error(`Error deleting file ${filename}:`, err);
+            })
+        );
 
-    await Promise.all(promises);
-    fetchFileList();
+        await Promise.all(promises);
+        fetchFileList();
+        alert('Selected files deleted successfully');
+    } catch (error) {
+        console.error('Error deleting files:', error);
+        alert('Error deleting some files');
+    }
 });
 
-document.getElementById('clearHistory').addEventListener('click', () => {
-    document.getElementById('uploadProgress').innerHTML = '';
-    document.getElementById('clearHistory').style.display = 'none';
+clearHistoryButton.addEventListener('click', () => {
+    uploadProgress.innerHTML = '';
+    clearHistoryButton.style.display = 'none';
 });
 
-document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+// Open file dialog when clicking the drop zone
+dropZone.addEventListener('click', () => {
+    fileInput.click();
+});
+
+// Prevent default drag behaviors
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, preventDefaults, false);
+    document.body.addEventListener(eventName, preventDefaults, false);
+});
+
+function preventDefaults(e) {
     e.preventDefault();
+    e.stopPropagation();
+}
 
-    const fileInput = document.getElementById('fileInput');
-    const files = fileInput.files;
+// Handle drag enter/leave visual feedback
+['dragenter', 'dragover'].forEach(eventName => {
+    dropZone.addEventListener(eventName, highlight, false);
+});
 
+['dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, unhighlight, false);
+});
+
+function highlight(e) {
+    dropZone.classList.add('drag-over');
+}
+
+function unhighlight(e) {
+    dropZone.classList.remove('drag-over');
+}
+
+// Handle dropped files
+dropZone.addEventListener('drop', handleDrop, false);
+
+function handleDrop(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    handleFiles(files);
+}
+
+// Handle files selected through file dialog
+fileInput.addEventListener('change', (e) => {
+    handleFiles(e.target.files);
+});
+
+function handleFiles(files) {
     if (files.length === 0) {
         alert("Please select at least one file.");
         return;
@@ -178,12 +208,11 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
 
     uploadCount = files.length;
     completedUploads = 0;
-
-    document.getElementById('clearHistory').style.display = 'block';
+    clearHistoryButton.style.display = 'block';
 
     for (const file of files) {
         const progressElement = createProgressElement(file);
-        document.getElementById('uploadProgress').appendChild(progressElement);
+        uploadProgress.appendChild(progressElement);
 
         const formData = new FormData();
         formData.append('file', file);
@@ -215,7 +244,7 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
 
             if (completedUploads === uploadCount) {
                 await new Promise(resolve => setTimeout(resolve, 100));
-                await fetchFileList();
+                fetchFileList();
             }
         };
 
@@ -232,7 +261,7 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
         xhr.send(formData);
     }
 
-    fileInput.value = '';
-});
+    fileInput.value = ''; // Reset file input
+}
 
 window.onload = fetchFileList;

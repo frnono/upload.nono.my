@@ -46,6 +46,51 @@ button:hover {
   to { opacity: 1; transform: translateY(0); }
 }
 
+.drop-zone {
+  width: 100%;
+  max-width: 600px;
+  height: 200px;
+  border: 2px dashed #d2ace8;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: rgba(210, 172, 232, 0.05);
+  margin-bottom: 20px;
+}
+
+.drop-zone:hover {
+  background-color: rgba(210, 172, 232, 0.1);
+  border-color: #ab80d1;
+}
+
+.drop-zone.drag-over {
+  background-color: rgba(210, 172, 232, 0.15);
+  border-color: #ab80d1;
+  transform: scale(1.02);
+}
+
+.drop-zone-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #d2ace8;
+}
+
+.drop-zone-content svg {
+  margin-bottom: 15px;
+  stroke: #d2ace8;
+}
+
+.drop-zone-content p {
+  margin: 0;
+  font-size: 1.1em;
+}
+
 .progress-container {
   background-color: grey;
   height: 20px;

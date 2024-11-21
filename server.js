@@ -35,7 +35,8 @@ const storage = multer.diskStorage({
         cb(null, uploadPath);
     },
     filename: (req, file, cb) => {
-        const randomName = uuidv4();
+        const extension = path.extname(file.originalname);
+        const randomName = uuidv4() + extension;
         saveFileMapping(randomName, file.originalname);
         cb(null, randomName);
     }
@@ -50,7 +51,7 @@ function saveFileMapping(randomName, originalName) {
     writeFileMappings(mappings);
 }
 
-// Lookup file name from uuid
+// Lookup file name from uuid without extension
 function lookupOriginalName(randomName) {
     const mappings = readFileMappings();
     return mappings[randomName];
@@ -66,9 +67,9 @@ app.post('/upload', upload.single('file'), (req, res) => {
 
 // Handle file download with original name
 app.get('/download/:uuid', (req, res) => {
-    const randomName = req.params.uuid;
-    const filePath = path.join(uploadPath, randomName);
-    const originalName = lookupOriginalName(randomName);
+    const filenameWithExt = req.params.uuid;
+    const filePath = path.join(uploadPath, filenameWithExt);
+    const originalName = lookupOriginalName(filenameWithExt);
 
     if (fs.existsSync(filePath) && originalName) {
         res.download(filePath, originalName);
@@ -100,11 +101,10 @@ app.get('/files', (req, res) => {
     });
 });
 
-
 // Handle file deletion
 app.delete('/delete/:filename', (req, res) => {
-    const fileName = req.params.filename;
-    const filePath = path.join(uploadPath, fileName);
+    const filename = req.params.filename;
+    const filePath = path.join(uploadPath, filename);
     const mappings = readFileMappings();
 
     if (fs.existsSync(filePath)) {
@@ -112,7 +112,7 @@ app.delete('/delete/:filename', (req, res) => {
             if (err) {
                 return res.status(500).send('Error deleting file');
             }
-            delete mappings[fileName]; // Remove entry from mappings
+            delete mappings[filename]; // Remove entry from mappings
             writeFileMappings(mappings); // Update mappings file
             res.send('File deleted successfully');
         });
@@ -122,6 +122,7 @@ app.delete('/delete/:filename', (req, res) => {
 });
 
 // Delete function to clean up old files
+/*
 function deleteOldFiles() {
     const now = Date.now();
     const oneWeek = 7 * 24 * 60 * 60 * 1000;
@@ -157,6 +158,7 @@ function deleteOldFiles() {
 
 // Schedule deletion of old files
 setInterval(deleteOldFiles, 60 * 60 * 1000);
+*/
 
 // Start the server
 app.listen(port, () => {
