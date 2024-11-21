@@ -118,7 +118,11 @@ function addCopyLinkHandlers() {
             const copyLinkIcon = li.querySelector('.copy-link-icon');
             const link = copyLinkIcon ? copyLinkIcon.getAttribute('data-link') : null;
 
-            if (link && !event.target.matches('input[type="checkbox"]') && !event.target.matches('.file-name')) {
+            if (
+                link && 
+                !event.target.matches('input[type="checkbox"]') && 
+                !event.target.closest('a')
+            ) {
                 try {
                     await navigator.clipboard.writeText(window.location.origin + link);
                     alert('Link copied to clipboard!');
@@ -130,7 +134,6 @@ function addCopyLinkHandlers() {
         });
     });
 }
-
 bulkDeleteButton.addEventListener('click', async () => {
     const checkedFiles = document.querySelectorAll('.file-checkbox:checked');
     const filenames = Array.from(checkedFiles).map(checkbox => checkbox.dataset.filename);
