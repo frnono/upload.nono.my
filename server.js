@@ -87,7 +87,7 @@ app.delete('/delete/:filename', (req, res) => {
 });
 
 
-// Function to delete files older than 24 hours
+// Function to delete files older than a week
 function deleteOldFiles() {
     const now = Date.now();
 

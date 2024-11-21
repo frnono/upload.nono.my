@@ -1,0 +1,145 @@
+body {
+  background-color: #2B2A33;
+  color: white;
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+  margin: 0;
+  padding: 20px;
+  position: relative;
+  min-height: 100vh;
+}
+
+form {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+input[type="file"] {
+  margin-right: 10px;
+}
+
+button {
+  background-color: #d2ace8;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  border-radius: 6px;
+}
+
+button:hover {
+  background-color: #ab80d1;
+}
+
+.upload-item {
+  margin: 10px 0;
+  padding: 10px;
+  background-color: #2B2A33;
+  border-radius: 6px;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.progress-container {
+  background-color: grey;
+  height: 20px;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  margin-top: 5px;
+}
+
+.progress-bar {
+  position: absolute;
+  width: 0;
+  height: 100%;
+  background-color: #d2ace8;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  position: absolute;
+  width: 100%;
+  text-align: center;
+  line-height: 20px;
+  color: white;
+}
+
+#result {
+margin-top: 20px;
+}
+
+#uploadProgress {
+margin-top: 20px;
+display: flex;
+flex-direction: column-reverse;  /* New uploads appear at the top */
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+ul li {
+  margin: 5px 0;
+  display: flex;
+  align-items: center;
+}
+
+.delete-btn {
+  margin-left: 10px;
+  color: red;
+  cursor: pointer;
+}
+
+.copy-link-icon {
+  margin-left: 10px;
+  cursor: pointer;
+  color: #4CAF50;
+  font-size: 18px;
+}
+
+.copy-link-icon:hover {
+  color: #45a049;
+}
+
+.filename {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.upload-stats {
+  font-size: 0.9em;
+  color: #ccc;
+}
+
+.clear-history, .bulk-delete {
+  background-color: #666;
+  color: white;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 10px;
+  font-size: 0.9em;
+}
+
+.clear-history:hover, .bulk-delete:hover {
+  background-color: #777;
+}
+
+.upload-time {
+  font-size: 0.8em;
+  color: #888;
+  margin-top: 5px;
+}
+
+.checkbox-label {
+  margin-left: 5px;
+}
