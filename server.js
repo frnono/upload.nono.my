@@ -91,13 +91,15 @@ app.get('/files', (req, res) => {
             return {
                 name: originalName,
                 uuid: file,
-                size: stats.size
+                size: stats.size,
+                modifiedTime: stats.mtimeMs
             };
         });
 
         res.json(fileDetails);
     });
 });
+
 
 // Handle file deletion
 app.delete('/delete/:filename', (req, res) => {

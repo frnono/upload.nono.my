@@ -64,6 +64,13 @@ async function fetchFileList() {
     try {
         const response = await fetch('/files');
         const files = await response.json();
+        
+        files.sort((a, b) => {
+            const statsA = fs.statSync(path.join(uploadPath, a.uuid));
+            const statsB = fs.statSync(path.join(uploadPath, b.uuid));
+            return statsB.mtimeMs - statsA.mtimeMs;
+        });
+
         const fileListElement = document.getElementById('fileList');
         const uploadedFilesHeading = document.getElementById('uploadedFilesHeading');
         const existingFiles = new Map();
