@@ -46,9 +46,13 @@ button:hover {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes fadeOut {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-10px); }
+}
+
 .drop-zone {
   width: 100%;
-  max-width: 600px;
   height: 200px;
   border: 2px dashed #d2ace8;
   border-radius: 15px;
@@ -56,7 +60,7 @@ button:hover {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.4s ease-in;
   background-color: rgba(210, 172, 232, 0.05);
   margin-bottom: 20px;
 }
@@ -64,6 +68,7 @@ button:hover {
 .drop-zone:hover {
   background-color: rgba(210, 172, 232, 0.1);
   border-color: #ab80d1;
+  transition: background-color 0.2s ease-out;
 }
 
 .drop-zone.drag-over {
@@ -126,6 +131,63 @@ display: flex;
 flex-direction: column-reverse;  /* New uploads appear at the top */
 }
 
+#fileList {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  margin: 0;
+  list-style-type: none;
+  width: 100%;
+}
+
+#fileList li {
+  background-color: #3f2f52;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 3em; 
+  max-height: 3em; 
+  overflow: hidden;
+  transition: background-color 0.8s ease-in;
+}
+
+#fileList li:hover {
+  background-color: #784e9c; 
+  border-color: #ab80d1;
+  transition: background-color 0.1s ease-out;
+}
+
+#fileList li label {
+  flex-grow: 1;
+  margin-right: 20px;
+  overflow: hidden;
+  white-space: normal;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* Style links and other elements within the list items */
+#fileList li a {
+  color: #d2ace8;
+  text-decoration: none;
+}
+
+#fileList li a:hover {
+  color: #ab80d1;
+}
+
+#fileList li .file-size {
+  color: #ccc;
+  font-size: 1em;
+  min-width: 80px;
+  text-align: right;
+}
 ul {
   list-style-type: none;
   padding: 0;

@@ -19,7 +19,7 @@ function formatSizeUnits(bytes) {
 }
 
 function formatTime(date) {
-    return date.toLocaleTimeString() + ' ' + date.toLocaleDateString();
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
 }
 
 function createProgressElement(file) {
@@ -87,16 +87,15 @@ async function fetchFileList() {
 
             existingFiles.set(newName, nameCounter);
             
-            const extension = newName.split('.').pop();
-            const fileUrl = `/download/${file.uuid}.${extension}`;
+            const fileUrl = `/download/${file.uuid}`;
             const fileSize = formatSizeUnits(file.size);
             return `
-                <li>
+                <li class="file-list-item">
                     <input type="checkbox" class="file-checkbox" data-filename="${file.uuid}">
                     <label class="checkbox-label" for="${file.uuid}">
                         <a href="${fileUrl}" download="${newName}">${newName}</a>
                     </label>
-                    <span style="margin-left: 10px;">(${fileSize})</span>
+                    <span class="file-size">(${fileSize})</span>
                     <span class="copy-link-icon" data-link="${fileUrl}">📋</span>
                 </li>
             `;
@@ -114,15 +113,19 @@ async function fetchFileList() {
 }
 
 function addCopyLinkHandlers() {
-    document.querySelectorAll('.copy-link-icon').forEach(icon => {
-        icon.addEventListener('click', async () => {
-            const link = icon.getAttribute('data-link');
-            try {
-                await navigator.clipboard.writeText(window.location.origin + link);
-                alert('Link copied to clipboard!');
-            } catch (err) {
-                console.error('Error copying link:', err);
-                alert('Failed to copy link');
+    document.querySelectorAll('.file-list-item').forEach(li => {
+        li.addEventListener('click', async event => {
+            const copyLinkIcon = li.querySelector('.copy-link-icon');
+            const link = copyLinkIcon.getAttribute('data-link');
+            
+            if (!event.target.matches('input[type="checkbox"]')) { // Avoid checkbox clicks
+                try {
+                    await navigator.clipboard.writeText(window.location.origin + link);
+                    alert('Link copied to clipboard!');
+                } catch (err) {
+                    console.error('Error copying link:', err);
+                    alert('Failed to copy link');
+                }
             }
         });
     });
@@ -235,7 +238,7 @@ function handleFiles(files) {
                 progressElement.style.backgroundColor = '#3f2f52';
                 const uploadTime = document.createElement('div');
                 uploadTime.className = 'upload-time';
-                uploadTime.textContent = `Completed: ${formatTime(new Date())}`;
+                uploadTime.textContent = `Finished at ${formatTime(new Date())}`;
                 progressElement.appendChild(uploadTime);
             } else {
                 progressElement.style.backgroundColor = '#4a1a1a';
