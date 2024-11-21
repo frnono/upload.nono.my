@@ -65,11 +65,7 @@ async function fetchFileList() {
         const response = await fetch('/files');
         const files = await response.json();
         
-        files.sort((a, b) => {
-            const statsA = fs.statSync(path.join(uploadPath, a.uuid));
-            const statsB = fs.statSync(path.join(uploadPath, b.uuid));
-            return statsB.mtimeMs - statsA.mtimeMs;
-        });
+        files.sort((a, b) => b.modifiedTime - a.modifiedTime);
 
         const fileListElement = document.getElementById('fileList');
         const uploadedFilesHeading = document.getElementById('uploadedFilesHeading');
@@ -113,7 +109,6 @@ async function fetchFileList() {
         console.error('Error fetching file list:', error);
     }
 }
-
 function addCopyLinkHandlers() {
     document.querySelectorAll('.copy-link-icon').forEach(icon => {
         icon.addEventListener('click', () => {
