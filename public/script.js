@@ -116,9 +116,9 @@ function addCopyLinkHandlers() {
     document.querySelectorAll('.file-list-item').forEach(li => {
         li.addEventListener('click', async event => {
             const copyLinkIcon = li.querySelector('.copy-link-icon');
-            const link = copyLinkIcon.getAttribute('data-link');
-            
-            if (!event.target.matches('input[type="checkbox"]')) { // Avoid checkbox clicks
+            const link = copyLinkIcon ? copyLinkIcon.getAttribute('data-link') : null;
+
+            if (link && !event.target.matches('input[type="checkbox"]') && !event.target.matches('.file-name')) {
                 try {
                     await navigator.clipboard.writeText(window.location.origin + link);
                     alert('Link copied to clipboard!');
