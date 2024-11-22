@@ -121,6 +121,31 @@ button:hover {
   color: white;
 }
 
+.uploaded-files-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Space between header and button */
+  width: 100%;
+}
+
+.uploaded-files-header h1 {
+  margin-right: 10px;
+}
+
+.bulk-delete {
+  margin: 0;
+  padding: 12px 24px;
+  font-size: 16px;
+  line-height: 1.5;
+  cursor: pointer;
+  background-color: #ff6c6c;
+  color: white;
+}
+
+.bulk-delete:hover {
+  background-color: #fca0a0;
+}
+
 #result {
 margin-top: 20px;
 }
@@ -226,7 +251,7 @@ ul li {
   color: #ccc;
 }
 
-.clear-history, .bulk-delete {
+.clear-history {
   background-color: #666;
   color: white;
   padding: 5px 10px;
@@ -234,10 +259,12 @@ ul li {
   border-radius: 4px;
   cursor: pointer;
   margin-bottom: 10px;
-  font-size: 0.9em;
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
 }
 
-.clear-history:hover, .bulk-delete:hover {
+.clear-history:hover {
   background-color: #777;
 }
 

@@ -21,13 +21,15 @@
         </div>
     </form>
 
-    <button id="clearHistory" style="display: none;">Clear Upload History</button>
+    <button id="clearHistory" class="clear-history" style="display: none;">Clear History</button>
 
     <div id="uploadProgress"></div>
     <div id="result"></div>
 
-    <h1 id="uploadedFilesHeading" style="display: none;">Uploaded Files</h1>
-    <button id="bulkDelete" class="bulk-delete" style="display: none;">Delete</button>
+    <div class="uploaded-files-header">
+        <h1 id="uploadedFilesHeading" style="display: none;">Uploaded Files</h1>
+        <button id="bulkDelete" class="bulk-delete" style="display: none;">Delete</button>
+    </div>
     <ul id="fileList"></ul>
 
     <script src="script.js"></script>
