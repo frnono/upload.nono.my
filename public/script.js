@@ -10,12 +10,13 @@ const clearHistoryButton = document.getElementById('clearHistory');
 const fileListElement = document.getElementById('fileList');
 const uploadedFilesHeading = document.getElementById('uploadedFilesHeading');
 
-function formatSizeUnits(bytes) {
+function formatSizeUnits(bytes, trailing = true) {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+    const format = (bytes / Math.pow(k, i)).toFixed(2)
+    return (trailing ? format : parseFloat(format)) + ' ' + sizes[i];
 }
 
 function formatTime(date) {
@@ -88,7 +89,7 @@ async function fetchFileList() {
             existingFiles.set(newName, nameCounter);
             
             const fileUrl = `/download/${file.uuid}`;
-            const fileSize = formatSizeUnits(file.size);
+            const fileSize = formatSizeUnits(file.size, false);
             return `
                 <li class="file-list-item">
                     <input type="checkbox" class="file-checkbox" data-filename="${file.uuid}">
