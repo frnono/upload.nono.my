@@ -66,7 +66,7 @@ app.post('/upload', upload.single('file'), (req, res) => {
 });
 
 // Handle file download with original name
-app.get('/download/:uuid', (req, res) => {
+app.get('/d/:uuid', (req, res) => {
     const filenameWithExt = req.params.uuid;
     const filePath = path.join(uploadPath, filenameWithExt);
     const originalName = lookupOriginalName(filenameWithExt);

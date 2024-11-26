@@ -88,7 +88,7 @@ async function fetchFileList() {
 
             existingFiles.set(newName, nameCounter);
             
-            const fileUrl = `/download/${file.uuid}`;
+            const fileUrl = `/d/${file.uuid}`;
             const fileSize = formatSizeUnits(file.size, false);
             return `
                 <li class="file-list-item">
